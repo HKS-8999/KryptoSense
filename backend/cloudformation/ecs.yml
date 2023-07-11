@@ -1,0 +1,60 @@
+Resources:
+  CryptoCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: CryptoCluster
+
+  CryptoTaskLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: CryptoTaskLogGroup
+    
+  CryptoContainerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: CryptoContainerSecurityGroup
+      GroupDescription: Crypto container security group
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5173
+          ToPort: 8881
+          CidrIp: 0.0.0.0/0
+
+  CryptoTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: CryptoTaskDefinition    
+      Cpu: 256
+      Memory: 1024
+      NetworkMode: awsvpc
+      ExecutionRoleArn: arn:aws:iam::504057671438:role/LabRole
+      ContainerDefinitions:
+        - Name: CryptoContainerName  
+          Image: !Join ["", ["504057671438", ".dkr.ecr.",!Ref 'AWS::Region','.amazonaws.com/',"crypto-repo"]]
+          PortMappings:
+            - ContainerPort: 5173
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref CryptoTaskLogGroup
+              awslogs-stream-prefix: ecs
+      RequiresCompatibilities:
+        - EC2
+        - FARGATE
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: CryptoService 
+      Cluster: !Ref CryptoCluster
+      TaskDefinition: !Ref CryptoTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets:
+            - subnet-050ce609789fb427b
+          SecurityGroups:
+            - !GetAtt CryptoContainerSecurityGroup.GroupId

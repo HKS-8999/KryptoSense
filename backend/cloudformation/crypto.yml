@@ -1,0 +1,360 @@
+  
+  LoginFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: loginLambda.lambda_handler
+      Role: arn:aws:iam::504057671438:role/LabRole
+      Code:
+        S3Bucket: kryptosense
+        S3Key: loginLambda.py.zip
+      Runtime: python3.9
+      Timeout: 900
+      FunctionName: LoginLambda
+      Environment:
+        Variables:
+          KmsKeyArn: !GetAtt KMSKey.Arn
+
+  RegisterFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: registerLambda.lambda_handler
+      Role: arn:aws:iam::504057671438:role/LabRole
+      Code:
+        S3Bucket: kryptosense
+        S3Key: registerLambda.py.zip
+      Runtime: python3.9
+      Timeout: 900
+      FunctionName: RegisterLambda
+      Environment:
+        Variables:
+          KmsKeyArn: !GetAtt KMSKey.Arn
+
+  AddToFavorites:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: addToFavorites.lambda_handler
+      Role: arn:aws:iam::504057671438:role/LabRole
+      Code:
+        S3Bucket: kryptosense
+        S3Key: addToFavorites.py.zip
+      Runtime: python3.9
+      Timeout: 900
+      FunctionName: AddToFavorites
+
+  AddToFavoritesLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AddToFavorites
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+  
+  GetFavorites:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: getFavorites.lambda_handler
+      Role: arn:aws:iam::504057671438:role/LabRole
+      Code:
+        S3Bucket: kryptosense
+        S3Key: getFavorites.py.zip
+      Runtime: python3.9
+      Timeout: 900
+      FunctionName: GetFavorites
+
+  GetFavoritesLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref GetFavorites
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+
+
+  DisplayCrypto:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: displayCrypto.handler
+      Role: arn:aws:iam::504057671438:role/LabRole
+      Code:
+        S3Bucket: kryptosense
+        S3Key: displayCrypto.mjs.zip
+      Runtime: nodejs18.x
+      Timeout: 900
+      FunctionName: DisplayCrypto
+  
+
+  DisplayEachCrypto:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: displayEachCrypto.handler
+      Role: arn:aws:iam::504057671438:role/LabRole
+      Code:
+        S3Bucket: kryptosense
+        S3Key: displayEachCrypto.mjs.zip
+      Runtime: nodejs18.x
+      Timeout: 900
+      FunctionName: DisplayEachCrypto
+  
+  CryptoApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: CryptoApiGateway
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowMethods:
+          - "*"
+        AllowOrigins:
+          - "*"
+        AllowHeaders:
+          - "*"
+      
+  DevApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      StageName: dev
+      Description: DevApiStage
+      AutoDeploy: true
+
+  LoginLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LoginFunction
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+
+  RegisterLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref RegisterFunction
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+
+  DisplayCryptoLambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DisplayCrypto
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+
+
+  DisplayEachCryptoInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref DisplayEachCrypto
+      Action: "lambda:InvokeFunction"
+      Principal: apigateway.amazonaws.com
+
+  LoginLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      Description: Lambda proxy integration
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LoginFunction.Arn}/invocations'
+  
+  AddToFavoritesLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      Description: Lambda proxy integration
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddToFavorites.Arn}/invocations'
+ 
+
+  RegisterLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      Description: Lambda proxy integration
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RegisterFunction.Arn}/invocations'
+  
+
+  DisplayCryptoLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      Description: Lambda proxy integration
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DisplayCrypto.Arn}/invocations'
+  
+  GetFavoritesLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      Description: Lambda proxy integration
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetFavorites.Arn}/invocations'
+  
+  DisplayEachCryptoLambdaIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      Description: Lambda proxy integration
+      IntegrationType: AWS_PROXY
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+      IntegrationUri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${DisplayEachCrypto.Arn}/invocations'
+  
+  LoginApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      RouteKey: "POST /login"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref LoginLambdaIntegration
+  
+  AddToFavoritesApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      RouteKey: "POST /favorites/add"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref AddToFavoritesLambdaIntegration
+
+  GetFavoritesApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      RouteKey: "POST /favorites/get"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref GetFavoritesLambdaIntegration
+
+
+  RegisterApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      RouteKey: "POST /register"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref RegisterLambdaIntegration
+
+  DisplayCryptoApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      RouteKey: "GET /crypto"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref DisplayCryptoLambdaIntegration
+
+  DisplayEachCryptoApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CryptoApiGateway
+      RouteKey: "GET /crypto/{name}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref DisplayEachCryptoLambdaIntegration
+
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - 
+          AttributeName: "id"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TableName: users
+  
+  MySecretKey:
+    Type: 'AWS::SecretsManager::Secret'
+    Properties:
+      Name: MySecretForKryptoSense
+      Description: This secret has a hardcoded password in SecretString (use GenerateSecretString instead)
+      SecretString: '{"API_KEY":"b2b1c6e1-0f46-43f8-93e2-fcd550fa8f07"}'
+
+  KMSKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: "Key used to encrypt and decrypt user passwords"
+        KeySpec: SYMMETRIC_DEFAULT
+        KeyUsage: ENCRYPT_DECRYPT
+        Enabled: true
+        KeyPolicy:
+          Version: "2012-10-17"
+          Id: "Allow LabRole to manage key"
+          Statement:
+            - Sid: "Allow LabRole to manage key"
+              Effect: Allow
+              Principal:
+                AWS: !Sub arn:aws:iam::504057671438:role/LabRole
+              Action:
+                - kms:Create*
+                - kms:Describe*
+                - kms:Enable*
+                - kms:List*
+                - kms:Put*
+                - kms:Update*
+                - kms:Revoke*
+                - kms:Disable*
+                - kms:Get*
+                - kms:Delete*
+                - kms:ScheduleKeyDeletion
+                - kms:CancelKeyDeletion
+              Resource: "*"
+            - Sid: "Allow LabRole to use the key"
+              Effect: Allow
+              Principal:
+                AWS: !Sub arn:aws:iam::504057671438:role/LabRole
+              Action:
+                - kms:Encrypt
+                - kms:Decrypt
+                - kms:ReEncrypt*
+                - kms:GenerateDataKey*
+                - kms:DescribeKey
+              Resource: "*"
+            - Sid: "Enable IAM User Permissions"
+              Effect: Allow
+              Principal:
+                AWS: !Sub arn:aws:iam::504057671438:root
+              Action:
+                - kms:Create*
+                - kms:Describe*
+                - kms:Enable*
+                - kms:List*
+                - kms:Put*
+                - kms:Update*
+                - kms:Revoke*
+                - kms:Disable*
+                - kms:Get*
+                - kms:Delete*
+                - kms:ScheduleKeyDeletion
+                - kms:CancelKeyDeletion
+              Resource: "*"
+
+  ECR:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: crypto-repo
